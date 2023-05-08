@@ -1,0 +1,6 @@
+*.jar
+*.class
+/.lein-*
+/.lsp
+/.clj-kondo
+/.calva
