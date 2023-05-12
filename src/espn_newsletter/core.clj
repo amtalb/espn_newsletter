@@ -1,8 +1,8 @@
 (ns espn-newsletter.core
   (:require [net.cgrand.enlive-html :as html]
-            [environ.core :refer [env]]
             [clojure.string :as str]
-            [hiccup.core :as hiccup])
+            [hiccup.core :as hiccup]
+            [uswitch.lambada.core :refer [deflambdafn]])
   (:import (org.apache.commons.mail HtmlEmail))
   (:gen-class))
 
@@ -34,14 +34,19 @@
   [body]
   (doto (HtmlEmail.)
     (.setHostName "smtp.gmail.com")
-    (.setAuthentication (env :smtp-email) (env :smtp-password))
+    (.setAuthentication (System/getenv "SMTP_EMAIL") (System/getenv "SMTP_PASSWORD"))
     (.setSmtpPort 587)
     (.setTLS true)
-    (.setFrom (env :from-email))
-    (.addTo (env :to-email))
+    (.setFrom (System/getenv "FROM_EMAIL"))
+    (.addTo (System/getenv "TO_EMAIL"))
     (.setSubject (str "ESPN Newsletter - " (now)))
     (.setHtmlMsg body)
     (.send)))
+
+(deflambdafn espn_newsletter.core.lambdaHandler
+  [in out ctx]
+  (let [page (get-page-info "https://www.espn.com/espn/rss/news")]
+    (send-newsletter (str/join (map build-newsletter-item (partition 5 page))))))
 
 (defn -main [& args]
   (let [page (get-page-info "https://www.espn.com/espn/rss/news")]
